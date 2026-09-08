@@ -1,0 +1,64 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+credentials.json
+credentials/
+secrets/
+*.pem
+*.key
+
+# Python environments and build products
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Data payloads and model weights
+/data/raw/
+/data/external/
+/data/processed/
+/data/cache/
+*.h5ad
+*.h5mu
+*.loom
+*.zarr/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+/checkpoints/
+
+# Generated payloads; keep configs and provenance trackable
+/artifacts/
+/reports/generated/
+/experiments/**/predictions/
+/experiments/**/artifacts/
+/experiments/**/logs/
+.cache/
+.ipynb_checkpoints/
+/tmp/
+
+# Small intentional test fixtures may be tracked, including AnnData
+!/tests/fixtures/
+!/tests/fixtures/**
