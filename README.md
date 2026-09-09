@@ -115,6 +115,7 @@ Engineering direction includes typed Python, a Typer CLI, typed experiment confi
 - `configs/`: guidance for future typed experiment configuration, without fake runnable examples.
 - `data/`: data-management policy; datasets and caches are excluded from source control.
 - `experiments/`: run organization and provenance policy.
+- `docs/huggingface.md`: optional Hugging Face model/artifact access and credential policy.
 - `docs/`: architecture, benchmark design, metric rationale, and reproducibility contracts.
 - `tests/unit/` and `tests/integration/`: reserved for future meaningful checks; no benchmark tests exist yet.
 
