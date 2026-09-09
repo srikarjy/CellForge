@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CellForge Artifact Sandbox</title>
+  <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+  <style>
+    :root { color-scheme: light; font: 16px/1.45 system-ui, sans-serif; }
+    body { margin: 0; background: #f5f7fb; color: #182230; }
+    main { max-width: 1200px; margin: auto; padding: 28px; }
+    h1 { margin-bottom: 4px; } .muted { color: #5f6b7a; }
+    .grid { display: grid; grid-template-columns: 340px 1fr; gap: 18px; }
+    .card { background: white; border: 1px solid #dce2ea; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px #17243a0d; }
+    label { display: block; font-weight: 650; margin: 12px 0 5px; }
+    input, select, textarea, button { font: inherit; } input, select, textarea { width: 100%; box-sizing: border-box; padding: 9px; border: 1px solid #c8d1df; border-radius: 7px; }
+    button { cursor: pointer; border: 0; border-radius: 7px; padding: 10px 13px; background: #2563eb; color: white; font-weight: 650; margin: 4px 4px 0 0; }
+    button.secondary { background: #64748b; } button.danger { background: #b42318; }
+    #viewer { height: 520px; border-radius: 9px; background: #101827; }
+    pre { white-space: pre-wrap; overflow: auto; background: #101827; color: #d7e3f4; padding: 12px; border-radius: 8px; max-height: 230px; }
+    .finding { padding: 8px 10px; border-left: 4px solid #f59e0b; background: #fff8e7; margin: 6px 0; }
+    .finding.error { border-color: #dc2626; background: #fff1f2; } .finding.ok { border-color: #16a34a; background: #effdf4; }
+    .actions { margin-top: 12px; } .status { font-weight: 700; margin: 8px 0; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } #viewer { height: 420px; } }
+  </style>
+</head>
+<body>
+<main>
+  <h1>CellForge Artifact Sandbox</h1>
+  <p class="muted">Inspect a FASTA or molecular structure file, run deterministic checks, and record a human review decision. This browser tool does not run a perturbation model.</p>
+  <div class="grid">
+    <section class="card">
+      <label for="artifact">Artifact file</label><input id="artifact" type="file" accept=".fasta,.fa,.faa,.fna,.pdb,.cif,.mmcif,.pdb.gz,.cif.gz">
+      <label for="reviewer">Reviewer</label><input id="reviewer" placeholder="Name or team">
+      <label for="decision">Decision</label><select id="decision"><option value="pending">Pending review</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="needs_revision">Needs revision</option></select>
+      <label for="notes">Review notes</label><textarea id="notes" rows="4" placeholder="Explain the decision or record known limitations"></textarea>
+      <div class="actions"><button id="run">Run checks</button><button class="secondary" id="save">Save review JSON</button></div>
+      <p id="status" class="status">No artifact loaded.</p>
+      <div id="findings"></div>
+    </section>
+    <section class="card"><div id="viewer"></div><h2>Artifact summary</h2><pre id="summary">Load a FASTA, PDB, or mmCIF file to begin.</pre></section>
+  </div>
+</main>
+<script>
+const state = { file: null, text: '', kind: '', findings: [], summary: {} };
+const $ = id => document.getElementById(id);
+function finding(severity, message) { state.findings.push({ severity, message }); }
+function renderFindings() { const box = $('findings'); box.innerHTML = state.findings.length ? state.findings.map(f => `<div class="finding ${f.severity}"><strong>${f.severity.toUpperCase()}</strong> — ${f.message}</div>`).join('') : '<div class="finding ok">No checks have been run.</div>'; }
+function parseFasta(text) {
+  const records = []; let header = null; let seq = '';
+  for (const line of text.split(/\r?\n/)) { if (!line.trim()) continue; if (line.startsWith('>')) { if (header) records.push({ header, sequence: seq }); header = line.slice(1).trim(); seq = ''; } else seq += line.trim().replace(/\s/g, ''); }
+  if (header) records.push({ header, sequence: seq }); return records;
+}
+function checkFasta(text) {
+  const records = parseFasta(text); if (!records.length) { finding('error', 'No FASTA records were found.'); return; }
+  const alphabet = new Set('ACGTUNRYSWKMBDHVX-'); let invalid = 0; let total = 0;
+  for (const r of records) for (const c of r.sequence.toUpperCase()) { total++; if (!alphabet.has(c)) invalid++; }
+  state.summary = { format: 'FASTA', records: records.length, lengths: records.map(r => r.sequence.length), bases: total, invalid_symbols: invalid };
+  if (invalid) finding('error', `${invalid} symbols are outside the accepted nucleic-acid alphabet.`); else finding('ok', 'All sequence symbols are valid for a nucleic-acid FASTA.');
+  if (records.some(r => !r.sequence.length)) finding('error', 'At least one FASTA record has an empty sequence.');
+  if (records.length > 1) finding('warning', 'Multiple records found; downstream sequence-to-structure mapping must identify the intended record.');
+  $('summary').textContent = JSON.stringify(state.summary, null, 2);
+}
+function checkStructure(text, kind) {
+  const lines = text.split(/\r?\n/); const atoms = lines.filter(l => /^(ATOM  |HETATM)/.test(l)); const models = lines.filter(l => /^MODEL/.test(l)).length;
+  const chains = [...new Set(atoms.map(l => l.slice(21, 22).trim()).filter(Boolean))];
+  state.summary = { format: kind.toUpperCase(), atom_records: atoms.length, models, chains };
+  if (!atoms.length) finding('error', 'No ATOM or HETATM records were found.'); else finding('ok', `${atoms.length} coordinate records found across ${chains.length || 'unknown'} chain(s).`);
+  if (!chains.length) finding('warning', 'No chain identifiers were detected.');
+  if (models > 1) finding('warning', `${models} MODEL records found; review alternate model handling.`);
+  $('summary').textContent = JSON.stringify(state.summary, null, 2);
+  const viewer = $('viewer'); viewer.innerHTML = ''; const v = $3Dmol.createViewer(viewer, { backgroundColor: '#101827' }); v.addModel(text, kind === 'pdb' ? 'pdb' : 'cif'); v.setStyle({}, { cartoon: { color: 'spectrum' }, stick: { radius: 0.12 } }); v.zoomTo(); v.render(); state.viewer = v;
+}
+$('artifact').addEventListener('change', async e => { const file = e.target.files[0]; if (!file) return; state.file = file; state.text = await file.text(); const name = file.name.toLowerCase(); state.kind = name.endsWith('.pdb') ? 'pdb' : (name.endsWith('.cif') || name.endsWith('.mmcif')) ? 'cif' : 'fasta'; $('status').textContent = `${file.name} loaded.`; state.findings = []; state.summary = {}; renderFindings(); if (state.kind === 'fasta') checkFasta(state.text); else checkStructure(state.text, state.kind); });
+$('run').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } state.findings = []; state.kind === 'fasta' ? checkFasta(state.text) : checkStructure(state.text, state.kind); renderFindings(); $('status').textContent = 'Checks complete; review the findings before deciding.'; });
+$('save').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } const review = { artifact: state.file.name, artifact_size_bytes: state.file.size, artifact_type: state.kind, reviewer: $('reviewer').value.trim(), decision: $('decision').value, notes: $('notes').value.trim(), findings: state.findings, summary: state.summary, created_at: new Date().toISOString(), checker: 'cellforge-sandbox-0.1' }; const blob = new Blob([JSON.stringify(review, null, 2) + '\n'], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${state.file.name}.review.json`; a.click(); URL.revokeObjectURL(a.href); $('status').textContent = 'Review JSON downloaded.'; });
+renderFindings();
+</script>
+</body></html>
