@@ -18,6 +18,12 @@ Benchmark conclusions depend on dataset construction, train/test leakage, donor 
 
 The planned harness will provide dataset validation, reproducible biological splits, model adapters, strong simple baselines, standardized benchmark execution, biological metrics, and OOD/generalization analysis. Future runs will preserve run manifests and machine-readable results for comparison reports. These are planned capabilities, not currently available functionality.
 
+## Where CellForge Fits
+
+CellForge complements existing biology platforms instead of trying to replace them. Benchling focuses on sequence design, guide scoring, annotation, and laboratory workflow. Cellxgene focuses on discovering and exploring single-cell datasets. CellForge focuses on what happens after a perturbation is represented: validating the data, comparing predictions with measured cellular responses, testing generalization under biological shifts, and preserving evidence for human review.
+
+The CRISPR workflow can import or register a guide, map it to a target and optional Cas9–RNA–DNA structure, connect it to observed single-cell perturbation data, and save a run-linked review. A structure or guide score is evidence for inspection; it is not proof of editing efficacy or a substitute for laboratory validation.
+
 ## Core Architecture
 
 ```mermaid
@@ -126,6 +132,8 @@ Empty directories are reserved with `.gitkeep`; they contain no Python implement
 ## Current Status
 
 **Stage 1 — architecture and repository foundation** establishes project scope, architecture, benchmark principles, reproducibility expectations, documentation, and repository organization. No scientific computation or measured benchmark findings are included.
+
+The repository also contains an early local artifact sandbox and Phase 1 GSE90063 source-validation path. These are development foundations, not a completed production service or benchmark result.
 
 ## Roadmap
 
