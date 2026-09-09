@@ -1,14 +1,14 @@
 # Phase 1 dataset candidate
 
-Phase 1 needs one public perturbation dataset with enough metadata for a defensible first benchmark. The current candidate is **GSE314342**, a primary human CD4+ T-cell Perturb-seq study described as a genome-scale CRISPR interference screen spanning approximately 22 million cells from four donors across resting and stimulated conditions.
+Phase 1 needs one public perturbation dataset with enough metadata for a defensible first benchmark. The repository's current dataset is **GSE90063 (Dixit et al., 2016)**, a pooled Perturb-seq study of mouse bone-marrow-derived dendritic cells (BMDCs) with unstimulated and LPS-stimulated contexts.
 
 This is a candidate, not a selected or downloaded dataset. Adoption requires verification of the source record, downloadable matrix, access terms, perturbation and control annotations, gene identifiers, donor coverage, cell-state/context metadata, and guide-level replication. Confounding between perturbation, donor, stimulation, batch, and sequencing run must be documented.
 
 ## Cellxgene role
 
-Cellxgene Discover can provide targeted collection/dataset discovery and an AnnData retrieval path when the candidate is published there. A future adapter should persist the collection or dataset identifier, source URL, release or snapshot, retrieval timestamp, and local artifact fingerprint. It must then validate dimensions, stable identifiers, perturbation fields, controls, donors, cell types, and contexts.
+Cellxgene Discover can provide targeted collection/dataset discovery and an AnnData retrieval path if this study is published there. The current source implementation uses the GEO supplementary files directly. A future Cellxgene path should persist the collection or dataset identifier, source URL, release or snapshot, retrieval timestamp, and local artifact fingerprint. It must then validate dimensions, stable identifiers, perturbation fields, controls, donors, cell types, and contexts.
 
-Cellxgene metadata does not prove that a dataset supports every OOD split. The observations must establish whether unseen perturbation, donor, cell type, or context holdouts are identifiable and represented. If the candidate is not available through Cellxgene, the same provenance and validation contract applies to its primary archive source.
+Cellxgene metadata does not prove that a dataset supports every OOD split. For GSE90063, the available contexts support an unstimulated-to-LPS context comparison and unseen-perturbation evaluation. Donor and cell-type holdouts are not supported by the current BMDC source metadata and must not be claimed.
 
 ## Evo 2 boundary
 
@@ -18,4 +18,4 @@ Any future Evo adapter must declare sequence provenance, genome build, perturbat
 
 ## Adoption decision
 
-The dataset is adopted only after a validation report confirms provenance and annotations, documents missing metadata and confounding, defines the expression target and controls, and records which OOD conditions are supportable. Until then, GSE314342 remains a documented candidate.
+The dataset is considered adopted for the current foundation once its downloaded GEO files pass structural validation. The implementation records matrix/index alignment, gene and guide formats, controls, assignment coverage, shared perturbations, and supported OOD dimensions in a `ValidationReport`. Biological limitations remain documented, including the absence of donor and cell-type holdouts.
