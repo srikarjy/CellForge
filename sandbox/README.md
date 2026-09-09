@@ -16,4 +16,6 @@ It intentionally does not run Evo 2, predict perturbation responses, or make aut
 
 Open `index.html` in a browser, choose an artifact, inspect the rendered structure or sequence summary, run checks, enter a decision, and choose **Save review JSON**. The file is processed in the browser; no upload service is included.
 
+The sandbox rejects files larger than 25 MiB to bound in-browser resource use. It also applies a restrictive Content Security Policy that blocks page network connections and object embeds while allowing the 3Dmol.js renderer. Production deployments should pin and self-host that dependency with integrity-controlled builds.
+
 This is an exploratory local sandbox. It is not a replacement for validated structural biology software or a publication-grade geometry checker.

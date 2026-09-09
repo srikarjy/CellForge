@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://3Dmol.csb.pitt.edu 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none';">
   <title>CellForge Artifact Sandbox</title>
   <script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
   <style>
@@ -43,6 +44,7 @@
 </main>
 <script>
 const state = { file: null, text: '', kind: '', findings: [], summary: {} };
+const MAX_FILE_BYTES = 25 * 1024 * 1024;
 const $ = id => document.getElementById(id);
 function finding(severity, message) { state.findings.push({ severity, message }); }
 function renderFindings() { const box = $('findings'); box.innerHTML = state.findings.length ? state.findings.map(f => `<div class="finding ${f.severity}"><strong>${f.severity.toUpperCase()}</strong> — ${f.message}</div>`).join('') : '<div class="finding ok">No checks have been run.</div>'; }
@@ -71,7 +73,7 @@ function checkStructure(text, kind) {
   $('summary').textContent = JSON.stringify(state.summary, null, 2);
   const viewer = $('viewer'); viewer.innerHTML = ''; const v = $3Dmol.createViewer(viewer, { backgroundColor: '#101827' }); v.addModel(text, kind === 'pdb' ? 'pdb' : 'cif'); v.setStyle({}, { cartoon: { color: 'spectrum' }, stick: { radius: 0.12 } }); v.zoomTo(); v.render(); state.viewer = v;
 }
-$('artifact').addEventListener('change', async e => { const file = e.target.files[0]; if (!file) return; state.file = file; state.text = await file.text(); const name = file.name.toLowerCase(); state.kind = name.endsWith('.pdb') ? 'pdb' : (name.endsWith('.cif') || name.endsWith('.mmcif')) ? 'cif' : 'fasta'; $('status').textContent = `${file.name} loaded.`; state.findings = []; state.summary = {}; renderFindings(); if (state.kind === 'fasta') checkFasta(state.text); else checkStructure(state.text, state.kind); });
+$('artifact').addEventListener('change', async e => { const file = e.target.files[0]; if (!file) return; state.file = null; state.text = ''; state.findings = []; state.summary = {}; renderFindings(); if (file.size > MAX_FILE_BYTES) { $('status').textContent = 'File exceeds the 25 MiB sandbox limit.'; finding('error', 'The artifact is too large for safe in-browser inspection.'); renderFindings(); return; } state.file = file; state.text = await file.text(); const name = file.name.toLowerCase(); state.kind = name.endsWith('.pdb') ? 'pdb' : (name.endsWith('.cif') || name.endsWith('.mmcif')) ? 'cif' : 'fasta'; $('status').textContent = `${file.name} loaded.`; renderFindings(); if (state.kind === 'fasta') checkFasta(state.text); else checkStructure(state.text, state.kind); });
 $('run').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } state.findings = []; state.kind === 'fasta' ? checkFasta(state.text) : checkStructure(state.text, state.kind); renderFindings(); $('status').textContent = 'Checks complete; review the findings before deciding.'; });
 $('save').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } const review = { artifact: state.file.name, artifact_size_bytes: state.file.size, artifact_type: state.kind, reviewer: $('reviewer').value.trim(), decision: $('decision').value, notes: $('notes').value.trim(), findings: state.findings, summary: state.summary, created_at: new Date().toISOString(), checker: 'cellforge-sandbox-0.1' }; const blob = new Blob([JSON.stringify(review, null, 2) + '\n'], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${state.file.name}.review.json`; a.click(); URL.revokeObjectURL(a.href); $('status').textContent = 'Review JSON downloaded.'; });
 renderFindings();
