@@ -117,6 +117,7 @@ Engineering direction includes typed Python, a Typer CLI, typed experiment confi
 - `experiments/`: run organization and provenance policy.
 - `docs/huggingface.md`: optional Hugging Face model/artifact access and credential policy.
 - `docs/tool-use-policy.md`: allowlisted tools, resource limits, network boundaries, and human-approval gates.
+- `docs/crispr-scope.md`: bounded CRISPR guide, structure, perturbation, and human-review workflow.
 - `docs/`: architecture, benchmark design, metric rationale, and reproducibility contracts.
 - `tests/unit/` and `tests/integration/`: reserved for future meaningful checks; no benchmark tests exist yet.
 
