@@ -1,6 +1,6 @@
 # CellForge Artifact Sandbox
 
-This is a small browser-based artifact review tool. Open `index.html` locally in a browser, select a FASTA, PDB, or mmCIF file, and review the deterministic findings. PDB/mmCIF files are rendered with the 3Dmol.js browser library loaded from its public CDN.
+This is a small browser-based artifact review tool. Open `index.html` locally in a browser, select a FASTA, PDB, or mmCIF file, and review the deterministic findings. PDB/mmCIF files are rendered with the 3Dmol.js browser library loaded from its public CDN. Compressed files are not currently supported by the browser UI.
 
 The sandbox supports:
 
