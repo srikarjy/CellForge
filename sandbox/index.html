@@ -32,6 +32,7 @@
   <div class="grid">
     <section class="card">
       <label for="artifact">Artifact file</label><input id="artifact" type="file" accept=".fasta,.fa,.faa,.fna,.pdb,.cif,.mmcif">
+      <label for="run-id">Benchmark run ID</label><input id="run-id" placeholder="run-2026-001">
       <label for="reviewer">Reviewer</label><input id="reviewer" placeholder="Name or team">
       <label for="decision">Decision</label><select id="decision"><option value="pending">Pending review</option><option value="approved">Approved</option><option value="rejected">Rejected</option><option value="needs_revision">Needs revision</option></select>
       <label for="notes">Review notes</label><textarea id="notes" rows="4" placeholder="Explain the decision or record known limitations"></textarea>
@@ -45,9 +46,11 @@
 <script>
 const state = { file: null, text: '', kind: '', findings: [], summary: {} };
 const MAX_FILE_BYTES = 25 * 1024 * 1024;
+let artifactSha256 = null;
 const $ = id => document.getElementById(id);
 function finding(severity, message) { state.findings.push({ severity, message }); }
 function renderFindings() { const box = $('findings'); box.innerHTML = state.findings.length ? state.findings.map(f => `<div class="finding ${f.severity}"><strong>${f.severity.toUpperCase()}</strong> — ${f.message}</div>`).join('') : '<div class="finding ok">No checks have been run.</div>'; }
+async function sha256(file) { const bytes = await file.arrayBuffer(); const digest = await crypto.subtle.digest('SHA-256', bytes); return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join(''); }
 function parseFasta(text) {
   const records = []; let header = null; let seq = '';
   for (const line of text.split(/\r?\n/)) { if (!line.trim()) continue; if (line.startsWith('>')) { if (header) records.push({ header, sequence: seq }); header = line.slice(1).trim(); seq = ''; } else seq += line.trim().replace(/\s/g, ''); }
@@ -73,9 +76,9 @@ function checkStructure(text, kind) {
   $('summary').textContent = JSON.stringify(state.summary, null, 2);
   const viewer = $('viewer'); viewer.innerHTML = ''; const v = $3Dmol.createViewer(viewer, { backgroundColor: '#101827' }); v.addModel(text, kind === 'pdb' ? 'pdb' : 'cif'); v.setStyle({}, { cartoon: { color: 'spectrum' }, stick: { radius: 0.12 } }); v.zoomTo(); v.render(); state.viewer = v;
 }
-$('artifact').addEventListener('change', async e => { const file = e.target.files[0]; if (!file) return; state.file = null; state.text = ''; state.findings = []; state.summary = {}; renderFindings(); if (file.size > MAX_FILE_BYTES) { $('status').textContent = 'File exceeds the 25 MiB sandbox limit.'; finding('error', 'The artifact is too large for safe in-browser inspection.'); renderFindings(); return; } state.file = file; state.text = await file.text(); const name = file.name.toLowerCase(); state.kind = name.endsWith('.pdb') ? 'pdb' : (name.endsWith('.cif') || name.endsWith('.mmcif')) ? 'cif' : 'fasta'; $('status').textContent = `${file.name} loaded.`; renderFindings(); if (state.kind === 'fasta') checkFasta(state.text); else checkStructure(state.text, state.kind); });
+$('artifact').addEventListener('change', async e => { const file = e.target.files[0]; if (!file) return; state.file = null; artifactSha256 = null; state.text = ''; state.findings = []; state.summary = {}; renderFindings(); if (file.size > MAX_FILE_BYTES) { $('status').textContent = 'File exceeds the 25 MiB sandbox limit.'; finding('error', 'The artifact is too large for safe in-browser inspection.'); renderFindings(); return; } state.file = file; artifactSha256 = await sha256(file); state.text = await file.text(); const name = file.name.toLowerCase(); state.kind = name.endsWith('.pdb') ? 'pdb' : (name.endsWith('.cif') || name.endsWith('.mmcif')) ? 'cif' : 'fasta'; $('status').textContent = `${file.name} loaded.`; renderFindings(); if (state.kind === 'fasta') checkFasta(state.text); else checkStructure(state.text, state.kind); });
 $('run').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } state.findings = []; state.kind === 'fasta' ? checkFasta(state.text) : checkStructure(state.text, state.kind); renderFindings(); $('status').textContent = 'Checks complete; review the findings before deciding.'; });
-$('save').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } const review = { artifact: state.file.name, artifact_size_bytes: state.file.size, artifact_type: state.kind, reviewer: $('reviewer').value.trim(), decision: $('decision').value, notes: $('notes').value.trim(), findings: state.findings, summary: state.summary, created_at: new Date().toISOString(), checker: 'cellforge-sandbox-0.1' }; const blob = new Blob([JSON.stringify(review, null, 2) + '\n'], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${state.file.name}.review.json`; a.click(); URL.revokeObjectURL(a.href); $('status').textContent = 'Review JSON downloaded.'; });
+$('save').addEventListener('click', () => { if (!state.file) { $('status').textContent = 'Choose an artifact first.'; return; } const runId = $('run-id').value.trim(); if (!runId) { $('status').textContent = 'Enter a benchmark run ID first.'; return; } if (!$('reviewer').value.trim() && $('decision').value !== 'pending') { $('status').textContent = 'Reviewer name is required for a final decision.'; return; } const review = { run_id: runId, artifact: state.file.name, artifact_size_bytes: state.file.size, artifact_sha256: artifactSha256, artifact_type: state.kind, reviewer: $('reviewer').value.trim(), decision: $('decision').value, notes: $('notes').value.trim(), findings: state.findings, summary: state.summary, created_at: new Date().toISOString(), checker: 'cellforge-sandbox-0.2' }; const blob = new Blob([JSON.stringify(review, null, 2) + '\n'], { type: 'application/json' }); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${state.file.name}.review.json`; a.click(); URL.revokeObjectURL(a.href); $('status').textContent = 'Review JSON downloaded.'; });
 renderFindings();
 </script>
 </body></html>
