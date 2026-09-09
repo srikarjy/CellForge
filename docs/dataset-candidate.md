@@ -19,3 +19,9 @@ Any future Evo adapter must declare sequence provenance, genome build, perturbat
 ## Adoption decision
 
 The dataset is considered adopted for the current foundation once its downloaded GEO files pass structural validation. The implementation records matrix/index alignment, gene and guide formats, controls, assignment coverage, shared perturbations, and supported OOD dimensions in a `ValidationReport`. Biological limitations remain documented, including the absence of donor and cell-type holdouts.
+
+## Current validation snapshot
+
+The downloaded source currently passes structural validation. The report records 33,063 cells and 17,515 genes for the unstimulated condition, and 32,777 cells and 17,775 genes for the LPS condition. Both contexts contain 24 target genes and share 16,564 expression features.
+
+Validation also reports assignment barcodes that are absent from the corresponding expression matrix: 10 in the unstimulated source and 3,078 in the LPS source. These are warnings rather than proof of invalid expression data, but the benchmark must document how such assignments are handled and must not silently treat them as evaluated cells.
