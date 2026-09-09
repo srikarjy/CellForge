@@ -10,9 +10,11 @@ Establish architecture, scope, README, roadmap, benchmark design, reproducibilit
 
 ## Phase 1 — Dataset Foundation
 
-Select one public perturbation dataset, favoring an immune-cell setting where feasible. Document provenance, release or snapshot, source links, access conditions, assay semantics, and limitations. Load AnnData or an equivalent structure; validate dimensions, expected metadata, perturbation labels, control assignments, and gene identifiers. Inspect donor, cell-type, and context annotations, canonicalize relevant labels, and identify missingness and confounding. Establish deterministic preprocessing with training-fitted transformations clearly separated from fixed operations.
+Select one public perturbation dataset, favoring an immune-cell setting where feasible. The current documented candidate is GSE314342, a primary human CD4+ T-cell screen spanning approximately 22 million cells from four donors and three stimulation conditions, pending source and metadata validation. Cellxgene may be used for targeted discovery and AnnData retrieval when the candidate is published there; it does not establish perturbation or OOD suitability by itself. Document provenance, release or snapshot, access conditions, assay semantics, and limitations. Load AnnData or an equivalent structure; validate dimensions, expected metadata, perturbation labels, control assignments, and gene identifiers. Inspect donor, cell-type, and context annotations, canonicalize relevant labels, and identify missingness and confounding. Establish deterministic preprocessing with training-fitted transformations clearly separated from fixed operations.
 
 **Completion:** one documented dataset can be ingested repeatably; validation checks detect malformed identifiers, missing required metadata, invalid perturbation/control assignments, and alignment problems. Actual metadata supports a written feasibility assessment for unseen perturbations and additional OOD settings. No donor or context capabilities are assumed from dataset branding.
+
+Evo 2 is not part of this phase's dataset ingestion or RNA-response benchmark. Its DNA sequence modeling role remains a separately scoped future task.
 
 ## Phase 2 — Reproducible Split Engine
 

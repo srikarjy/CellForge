@@ -21,6 +21,8 @@ flowchart TD
 
 Register one source initially, recording provenance, access conditions, source metadata, version, and fingerprints. Preserve stable cell and gene identifiers and document the meaning of measurements. Dataset selection belongs to Phase 1; donor, cell-type, and context support remain unverified. Introduce a dedicated dataset module only with real ingestion requirements.
 
+Cellxgene may provide targeted collection/dataset discovery and an AnnData download path. Its identifiers, source URL, release or snapshot, retrieval time, and local artifact fingerprint belong in the dataset manifest. It is a source integration, not a substitute for validating perturbation semantics or OOD support.
+
 ## Validation layer
 
 Check schema, identifier uniqueness, matrix/metadata alignment, expected biological metadata, perturbation labels, control definitions, missingness, and usable expression values. Distinguish invalid data from documented limitations. Validation must identify confounding and absent metadata rather than manufacture biological annotations.
@@ -36,6 +38,8 @@ Specify the prediction target, expression scale, gene universe, aggregation unit
 ## Model adapter layer
 
 Isolate external dependencies, model-specific preparation, fitting/loading, and prediction. Normalize outputs against task identifiers and expose model, checkpoint, adapter, and inference metadata. Candidate concepts are prepare, fit/load, predict, and metadata; no API signatures are finalized. Reject unsupported tasks or output mismatches rather than silently filling missing genes. Assess pretraining exposure and external information explicitly.
+
+Evo 2 is outside the initial RNA perturbation-model adapter set because it models DNA sequence. A future sequence-informed adapter may be added only for a separately defined genomic task with an explicit, validated bridge to cellular response.
 
 ## Baseline layer
 

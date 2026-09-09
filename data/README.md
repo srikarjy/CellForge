@@ -13,3 +13,5 @@ No dataset is selected, downloaded, or processed in Stage 1. Phase 1 will docume
 Do not blindly commit large single-cell matrices, AnnData files, checkpoints, or predictions. Keep shareable manifests and source metadata outside ignored payload directories. Review file size, redistribution terms, and privacy before adding a fixture; the fixture exception is not permission to commit full datasets. Do not store credentials or restricted participant data in Git.
 
 Download procedures and deterministic preprocessing will be implemented later. Cached preprocessing must eventually bind source identity, configuration, fitted training state, and software version to prevent stale reuse.
+
+The current Phase 1 candidate is documented in [`docs/dataset-candidate.md`](../docs/dataset-candidate.md). Cellxgene is an optional discovery and metadata route, not a guarantee that a collection supports perturbation benchmarking.
