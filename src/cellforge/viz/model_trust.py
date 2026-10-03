@@ -1,5 +1,7 @@
 from collections.abc import Sequence
 
+import numpy as np
+
 from cellforge.trust import ModelTrustRecord
 from cellforge.viz._optional import plotly
 
@@ -9,7 +11,10 @@ def model_reality_check(records: Sequence[ModelTrustRecord]):
     go = plotly()
     names = [record.perturbation for record in records]
     fig = go.Figure()
-    for label, values in (("advanced", [r.advanced_score for r in records]), ("no-change", [r.control_score for r in records]), ("linear", [r.linear_score for r in records])):
+    series = [("advanced", [r.advanced_score for r in records]), ("no-change", [r.control_score for r in records]), ("linear", [r.linear_score for r in records])]
+    if any(np.isfinite(r.training_mean_score) for r in records):
+        series.append(("training mean", [r.training_mean_score for r in records]))
+    for label, values in series:
         fig.add_bar(name=label, x=names, y=values)
     fig.update_layout(barmode="group", title="Model Reality Check", xaxis_title="Perturbation", yaxis_title="Pearson delta score")
     return fig

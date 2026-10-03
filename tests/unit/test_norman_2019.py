@@ -37,3 +37,9 @@ def test_norman_adapter_requires_perturbation_metadata() -> None:
         assert "perturbation" in str(error)
     else:  # pragma: no cover
         raise AssertionError("missing perturbation metadata was accepted")
+
+
+def test_norman_ctrl_suffix_is_single_target_for_gears_data() -> None:
+    obs = pd.DataFrame({"perturbation_name": ["ctrl", "KLF1+ctrl", "CEBPE+KLF1"]})
+    data = normalize_norman(ad.AnnData(np.ones((3, 2), dtype=np.float32), obs=obs, var=pd.DataFrame(index=["g0", "g1"])))
+    assert list(data.obs.assignment_class) == ["non_targeting_control", "single_target", "multi_target"]

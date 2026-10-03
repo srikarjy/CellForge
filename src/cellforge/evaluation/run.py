@@ -44,6 +44,8 @@ class EvaluationResult:
     split_sha256: str
     scores: tuple[PerturbationScore, ...]
     model_metadata: dict[str, Any] = field(default_factory=dict)
+    prediction_deltas: tuple[tuple[float, ...], ...] = ()
+    observed_deltas: tuple[tuple[float, ...], ...] = ()
 
     @property
     def coverage(self) -> float:
@@ -74,6 +76,9 @@ def evaluate_model(
 
     columns = columns or SplitColumns()
     check_leakage(adata, manifest, columns).raise_for_errors()
+    set_evaluation = getattr(model, "set_evaluation_perturbations", None)
+    if callable(set_evaluation):
+        set_evaluation(tuple(manifest.perturbations.get(partition, ())))
     model.fit(apply_split(adata, manifest, "train"), columns)
 
     held_out = pseudobulk(apply_split(adata, manifest, partition), columns)
@@ -100,7 +105,16 @@ def evaluate_model(
     provenance = getattr(model, "provenance", None)
     if callable(provenance):
         metadata = provenance(manifest.sha256, tuple(score.perturbation for score in scores))
-    return EvaluationResult(model.name, model.information_access, partition, manifest.sha256, scores, metadata)
+    return EvaluationResult(
+        model.name,
+        model.information_access,
+        partition,
+        manifest.sha256,
+        scores,
+        metadata,
+        tuple(tuple(map(float, row)) for row in predicted_delta),
+        tuple(tuple(map(float, row)) for row in observed_delta),
+    )
 
 
 def select_by_validation(

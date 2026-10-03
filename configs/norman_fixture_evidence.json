@@ -1,0 +1,11 @@
+[
+  {
+    "source": "fixture",
+    "source_id": "fixture:CEBPA",
+    "target": "CEBPA",
+    "claim": "Test-only evidence record used to exercise the auditable evidence path.",
+    "evidence_type": "dataset",
+    "direction": "unknown",
+    "payload": {"fixture": true, "scientific_interpretation": "none"}
+  }
+]

@@ -60,6 +60,7 @@ def run_norman_decision(
     advanced: EvaluationResult,
     control: EvaluationResult,
     linear: EvaluationResult,
+    training_mean: EvaluationResult | None = None,
     evidence: tuple[EvidenceRecord, ...] = (),
     run_id: str = "norman-mvp",
     measurement_config: MeasurementConfig | None = None,
@@ -71,7 +72,7 @@ def run_norman_decision(
     measurement = measure_responses(adata, measurement_config)
     reliability = classify_table(measurement, reliability_config)
     reliability_by_perturbation = {record.perturbation: record.classification for record in reliability}
-    trust = assess_model_trust(advanced, control, linear, reliability_by_perturbation)
+    trust = assess_model_trust(advanced, control, linear, reliability_by_perturbation, training_mean=training_mean)
     trust_by_perturbation = {record.perturbation: record for record in trust}
     contradictions = find_evidence_contradictions(tuple(evidence)) + find_model_contradictions(trust, measurement.responses)
     evidence_by_target: dict[str, list[EvidenceRecord]] = {}

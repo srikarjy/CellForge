@@ -48,6 +48,7 @@ Thumbs.db
 *.ckpt
 *.safetensors
 /checkpoints/
+/.cellforge-gears-data/
 
 # Generated payloads; keep configs and provenance trackable
 /artifacts/

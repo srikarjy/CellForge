@@ -57,3 +57,14 @@ def test_model_trust_cannot_be_trusted_when_linear_baseline_wins() -> None:
     by_name = {record.perturbation: record for record in records}
     assert by_name["A"].trust_status is ModelTrustStatus.LIMITED
     assert by_name["B"].trust_status is ModelTrustStatus.TRUSTED
+
+
+def test_undefined_control_baseline_is_noninformative_not_unknown() -> None:
+    records = assess_model_trust(
+        _evaluation("advanced", {"A": 0.6}),
+        _evaluation("control", {"A": float("nan")}),
+        _evaluation("linear", {"A": 0.2}),
+        {"A": ReliabilityClass.SPECIFIC},
+    )
+    assert records[0].beats_control_baseline
+    assert records[0].trust_status is ModelTrustStatus.TRUSTED
