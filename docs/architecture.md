@@ -1,6 +1,6 @@
-# Planned architecture
+# CellForge architecture
 
-Stage 1 documents boundaries only. No component described below is implemented.
+The repository now contains validation, split, baseline, evaluation, connector-gateway, and decision-package components. Remaining work is to connect them through one real scientific workflow and persist its artifacts.
 
 ```mermaid
 flowchart TD
@@ -15,6 +15,9 @@ flowchart TD
     M --> P[Reporting]
     R --> F[Configuration, predictions, manifests]
     F --> P
+    R --> E[Evidence connectors]
+    E --> P
+    P --> H[Human-reviewed decision package]
 ```
 
 ## Dataset layer
@@ -56,6 +59,10 @@ Provide deterministic, documented biological evaluation on aligned predictions a
 ## Reporting layer
 
 Consume persisted machine-readable results and provenance instead of rerunning models. Produce human-readable comparisons, uncertainty where justified, subgroup performance, and failure cases. Root `reports/` contains generated outputs; `src/cellforge/reports/` is reserved for future reporting code.
+
+## Decision-package layer
+
+`cellforge.decision` is the product boundary between computation and a scientific decision. It stores source-backed evidence, model prediction summaries, candidate interventions, limitations, workflow identity, and an explicit review state. Approval requires a named reviewer; a high model score does not authorize a candidate or replace experimental validation. See [`decision-package.md`](decision-package.md).
 
 ## Configuration and artifact boundaries
 

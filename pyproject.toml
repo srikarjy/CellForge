@@ -11,9 +11,9 @@ requires-python = ">=3.10"
 license = { file = "LICENSE" }
 dependencies = [
     "anndata>=0.10,<0.13",
-    "numpy>=1.26",
-    "pandas>=2.1",
-    "scipy>=1.11",
+    "numpy>=1.26,<2",
+    "pandas>=2.1,<2.2",
+    "scipy>=1.11,<1.15",
 ]
 classifiers = [
     "Development Status :: 2 - Pre-Alpha",
@@ -22,10 +22,28 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
 ]
 
+[project.scripts]
+cellforge = "cellforge.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8",
     "ruff>=0.6",
+]
+viz = [
+    "plotly>=5.20",
+    "networkx>=3.0",
+]
+app = [
+    "streamlit>=1.35",
+]
+models = [
+    "torch>=2.1",
+    "cell-gears>=0.1.1",
+]
+singlecell = [
+    "scanpy>=1.10",
+    "pertpy>=0.7",
 ]
 
 [tool.setuptools.packages.find]
@@ -36,3 +54,10 @@ namespaces = true
 [tool.ruff]
 target-version = "py310"
 line-length = 100
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "model_integration: requires the optional real advanced-model environment",
+]

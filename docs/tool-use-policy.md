@@ -69,3 +69,16 @@ Stop processing when an input exceeds a limit, a parser detects malformed conten
 ## Enforcement roadmap
 
 Phase 1 records these rules in documentation and keeps the browser sandbox bounded. A future enforcement layer should validate a resolved tool request against this policy before execution, emit an auditable decision, and attach the policy version to the run manifest. Enforcement should be tested with oversized files, malformed structures, invalid URLs, missing credentials, incompatible model outputs, repeated failures, and attempted external uploads.
+
+## Multi-connector workflow gateway
+
+The initial enforcement foundation is `cellforge.connectors.ConnectorGateway`. One workflow
+request may contain several explicit connector steps. Independent steps may execute concurrently;
+dependent steps execute only after their prerequisites succeed. The gateway enforces step,
+concurrency, timeout, provider, connector, and effect limits before returning a normalized result
+with per-step status and a manifest hash.
+
+ChatGPT, Claude, MCP, and local integrations remain provider adapters. Registering an adapter does
+not grant access to a platform's full connector catalog. The hosting platform must expose and
+authorize each connector, and CellForge must allowlist it. Write and destructive tools require
+separate explicit approval flags; human scientific-review gates still apply after execution.

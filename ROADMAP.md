@@ -1,12 +1,12 @@
 # CellForge roadmap
 
-Implementation phases have completion criteria rather than arbitrary deadlines. **Phase 0 corresponds to the current Stage 1 repository/documentation foundation.** All subsequent phases are planned. No dataset, scientific implementation, or measured benchmark result is included in Stage 1.
+Implementation phases have completion criteria rather than arbitrary deadlines. Phase 0 is complete; Phases 1–3 have initial implementations in this checkout. The decision-package and connector gateway establish the product boundary, while no advanced-model performance or production recommendation is claimed.
 
 ## Phase 0 — Repository Foundation
 
 Establish architecture, scope, README, roadmap, benchmark design, reproducibility contract, metric rationale, MIT license, Python 3.10+ package metadata, ignore rules, editor conventions, data policy, and experiment organization. Reserve a small source/test layout without implementation modules.
 
-**Completion:** documentation consistently distinguishes planned work from available functionality; no scientific code, fake results, or executable placeholders are introduced.
+**Completion:** complete. Documentation distinguishes available implementation from planned work; no scientific code is treated as a measured result.
 
 ## Phase 1 — Dataset Foundation
 
@@ -88,4 +88,18 @@ Prepare reproducible commands, benchmark methodology, architecture diagram, actu
 
 ## Principles across phases
 
-Benchmark before scaling. Prioritize generalization over leaderboard chasing, require strong baselines, use complementary biological metrics, and preserve the evidence needed to reconstruct published results. Avoid unrelated backend/cloud infrastructure and LLM-agent architecture. CellForge remains evaluation infrastructure for perturbation models, not a new foundation model or autonomous research system.
+Benchmark before scaling. Prioritize generalization over leaderboard chasing, require strong baselines, use complementary biological metrics, and preserve the evidence needed to reconstruct published results. Never invent metrics, dataset sizes, runtimes, or speedups.
+
+CellForge is a computational-biology tool for evaluating perturbation-response models, and it also hosts the agentic and platform layers built around that evaluation. These are in scope, as extension tracks below. Each lives in its own subpackage behind an optional extra, and the core evaluation path (datasets, splits, baselines, metrics, runner, reports) must not depend on any of them.
+
+## Extension tracks
+
+These build on the core and are developed alongside it. Each needs its own tests, and none may weaken the core's rigor.
+
+- **Connectors (`cellforge.connectors`):** a bounded gateway for live data and model sources (GEO, CELLxGENE, Hugging Face, NVIDIA endpoints) with allowlists, rate limits, approvals, and deterministic manifests.
+- **Virtual desktop (`cellforge.world`):** an isolated, offline desktop where an agent operates scientific tools through screenshots and validated actions, with budgets, approval gates, and hash-chained traces.
+- **Kernel sandbox:** verification of LLM-written GPU kernels against references, with static checks, process isolation, and anti-gaming benchmarks.
+- **Generative models:** flow-matching perturbation models and diffusion-based post-training, evaluated under the same contract as every other model, with no privileged treatment.
+- **Attestations:** signed run receipts over manifests, optionally anchored on a testnet. Keys stay on the host.
+
+Cost ceiling for paid services: USD 5 per month.

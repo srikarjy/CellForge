@@ -1,0 +1,7 @@
+{
+  "device": "cpu",
+  "epochs": 20,
+  "hidden_size": 64,
+  "batch_size": 32,
+  "test_batch_size": 128
+}

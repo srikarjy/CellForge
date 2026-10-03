@@ -1,8 +1,8 @@
 # CellForge
 
-**A reproducible benchmarking harness for virtual-cell and single-cell perturbation models.**
+**A reliability-aware trust layer between perturbation screens and experimental decisions.**
 
-Current status: **Stage 1 — architecture and repository foundation**. This repository contains documentation, project metadata, and reserved directories. Dataset ingestion, models, metrics, CLI commands, and benchmark execution are not implemented. No benchmark results are available.
+Current status: **Early implementation — validated datasets, splits, baselines, evaluation, connector gateway, measurement/reliability/trust layers, and decision-package contract**. No advanced-model benchmark result or production deployment is claimed.
 
 ## Why CellForge?
 
@@ -14,9 +14,13 @@ Benchmark conclusions depend on dataset construction, train/test leakage, donor 
 
 > Do modern biological foundation and perturbation-response models predict cellular state under unseen perturbations and biological contexts better than strong simple baselines?
 
+The product question is broader and more practical: **which perturbations have
+reliable measurements, does a model add trustworthy information for this
+setting, and what independent evidence supports or contradicts further review?**
+
 ## What CellForge Does
 
-The planned harness will provide dataset validation, reproducible biological splits, model adapters, strong simple baselines, standardized benchmark execution, biological metrics, and OOD/generalization analysis. Future runs will preserve run manifests and machine-readable results for comparison reports. These are planned capabilities, not currently available functionality.
+The harness provides dataset validation, reproducible biological splits, simple baselines, evaluation contracts, bounded multi-connector execution, and human-reviewed decision-package contracts. Advanced model adapters, a complete end-to-end decision workflow, and benchmark reports remain in progress.
 
 ## Where CellForge Fits
 
@@ -58,7 +62,7 @@ These are candidate evaluation conditions. No dataset has been selected, and no 
 
 The planned MVP starts with one public perturbation dataset, an immune-cell focus where feasible, and one prediction task. It will establish one dataset adapter, deterministic preprocessing, reproducible train/validation/test splits, unseen-perturbation evaluation, and at least one additional OOD evaluation if genuinely supported. Strong simple baselines will precede one appropriate advanced perturbation model. Standardized metrics, machine-readable results, and reproducible reports complete the intended MVP.
 
-If the selected dataset cannot support an additional biological holdout, the limitation will be documented and scope revisited before claiming broader generalization. Stage 1 only establishes the repository foundation.
+If the selected dataset cannot support an additional biological holdout, the limitation will be documented and scope revisited before claiming broader generalization. The repository foundation is established; implementation is now proceeding toward a single end-to-end decision workflow.
 
 ## Models
 
@@ -110,9 +114,29 @@ The planned scientific stack may use AnnData/Scanpy, NumPy, pandas or Polars, Sc
 
 Engineering direction includes typed Python, a Typer CLI, typed experiment configuration, deterministic seeds, cached preprocessing, run manifests, machine-readable results, and automated reporting. Conceptual future operations include validation, preparation, benchmarking, comparison, and reporting; none are available commands today.
 
+## Multi-Connector Gateway
+
+CellForge includes a provider-neutral gateway for expressing several approved connector operations
+as one bounded workflow call. Registered ChatGPT, Claude, MCP, or local adapters can run independent
+steps concurrently and dependency-linked steps in order. The gateway applies allowlists, step and
+concurrency limits, timeouts, and separate approval gates for write and destructive operations. It
+returns normalized per-step results and a SHA-256 manifest identity.
+
+The gateway does not automatically inherit a platform's connector catalog or credentials. The host
+must expose and authorize each connector, and an adapter must register it with CellForge. Connector
+execution also does not bypass the human scientific-review requirements described in the tool-use
+policy.
+
 ## Repository Structure
 
 - `src/cellforge/validation/`: reserved for structural and biological dataset checks.
+- `src/cellforge/measure/`: perturbation response summaries on an explicit expression scale.
+- `src/cellforge/reliability/`: configurable measurement reliability classifications.
+- `src/cellforge/trust/`: per-perturbation model-vs-baseline trust records.
+- `src/cellforge/evidence/`: normalized, payload-hashed external evidence records.
+- `src/cellforge/contradictions/`: conservative rules that surface conflicting evidence.
+- `src/cellforge/prioritize/`: transparent, decomposed candidate triage for human review.
+- `src/cellforge/decision/`: deterministic, human-reviewable decision packages.
 - `src/cellforge/tasks/`: reserved for prediction contracts and, initially, task-specific split responsibilities.
 - `src/cellforge/models/`: reserved for adapters that isolate external model dependencies.
 - `src/cellforge/baselines/`: reserved for simple methods using the same task and evaluation contract.
@@ -131,7 +155,7 @@ Empty directories are reserved with `.gitkeep`; they contain no Python implement
 
 ## Current Status
 
-**Stage 1 — architecture and repository foundation** establishes project scope, architecture, benchmark principles, reproducibility expectations, documentation, and repository organization. No scientific computation or measured benchmark findings are included.
+The repository began as a Stage 1 foundation and now includes dataset ingestion/validation, deterministic splits, strong baselines, evaluation contracts, bounded connector orchestration, Norman metadata normalization, measurement summaries, reliability classifications, model-trust records, and an auditable decision-package contract. No advanced-model performance claim or measured product recommendation is included yet.
 
 The repository also contains an early local artifact sandbox and Phase 1 GSE90063 source-validation path. These are development foundations, not a completed production service or benchmark result.
 
