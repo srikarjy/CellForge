@@ -13,17 +13,14 @@ validated on real data.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
-from enum import Enum
 from typing import Any
 
 import numpy as np
 
+from cellforge.reliability.classify import PerturbationReliability, ReliabilityClass
 
-class SplitHalfClass(str, Enum):
-    SPECIFIC = "SPECIFIC"
-    SHARED = "SHARED"
-    UNRELIABLE = "UNRELIABLE"
-    INSUFFICIENT_DATA = "INSUFFICIENT_DATA"
+
+SplitHalfClass = ReliabilityClass
 
 
 @dataclass(frozen=True)
@@ -50,30 +47,7 @@ class SplitHalfConfig:
             raise ValueError("shared_cosine_threshold must be in [0, 1]")
 
 
-@dataclass(frozen=True)
-class SplitHalfRecord:
-    perturbation: str
-    context: str
-    cells: int
-    control_cells: int
-    n_half: int
-    median_split_correlation: float
-    mean_split_correlation: float
-    reliability: float
-    response_magnitude: float
-    shared_cosine: float | None
-    shared_variance_fraction: float | None
-    classification: SplitHalfClass
-    bootstrap_classification: SplitHalfClass | None = None
-    bootstrap_stability: float | None = None
-    limitations: tuple[str, ...] = ()
-
-    def to_dict(self) -> dict[str, Any]:
-        payload = asdict(self)
-        payload["classification"] = self.classification.value
-        if self.bootstrap_classification is not None:
-            payload["bootstrap_classification"] = self.bootstrap_classification.value
-        return payload
+SplitHalfRecord = PerturbationReliability
 
 
 def _dense(x: Any) -> np.ndarray:
@@ -206,7 +180,7 @@ def classify_anndata(adata: Any, config: SplitHalfConfig | None = None) -> tuple
         effects = [row["_response"] for row in reliable if row["context"] == context]
         if effects:
             axes[context] = np.mean(np.stack(effects), axis=0)
-    finalized: list[SplitHalfRecord] = []
+    finalized: list[PerturbationReliability] = []
     for row in records:
         axis = axes.get(row["context"])
         cosine = None
@@ -218,20 +192,22 @@ def classify_anndata(adata: Any, config: SplitHalfConfig | None = None) -> tuple
             cosine = float(np.dot(left, axis) / denom) if denom > 0 else 0.0
         classification = row["classification"] or _classify(row["reliability"], cosine, config)
         finalized.append(
-            SplitHalfRecord(
+            PerturbationReliability(
                 perturbation=row["perturbation"],
                 context=row["context"],
+                classification=classification,
                 cells=row["cells"],
                 control_cells=row["control_cells"],
-                n_half=row["n_half"],
+                response_signal=row["response_magnitude"],
+                signal_to_noise=row["reliability"],
+                shared_response_fraction=None if cosine is None else float(cosine**2),
+                limitations=tuple(row["limitations"]),
+                config=asdict(config),
+                method=config.method,
+                reliability_statistic=row["reliability"],
                 median_split_correlation=row["median_split_correlation"],
-                mean_split_correlation=row["mean_split_correlation"],
-                reliability=row["reliability"],
-                response_magnitude=row["response_magnitude"],
                 shared_cosine=cosine,
                 shared_variance_fraction=None if cosine is None else float(cosine**2),
-                classification=classification,
-                limitations=tuple(row["limitations"]),
             )
         )
     return tuple(finalized)

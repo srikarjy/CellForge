@@ -24,9 +24,9 @@ def perturbation_trust_map(
             mode="markers",
             marker={"size": [max(8, min(36, item.cells / 5)) for item in rows], "color": [colors[rel[item.perturbation].classification.value] for item in rows]},
             text=[item.perturbation for item in rows],
-            customdata=[[item.cells, rel[item.perturbation].classification.value, trust.get(item.perturbation).trust_status.value if item.perturbation in trust else "unknown"] for item in rows],
-            hovertemplate="%{text}<br>S/N=%{x:.3g}<br>Effect=%{y:.3g}<br>cells=%{customdata[0]}<br>reliability=%{customdata[1]}<br>model trust=%{customdata[2]}<extra></extra>",
+            customdata=[[item.cells, rel[item.perturbation].classification.value, rel[item.perturbation].method, rel[item.perturbation].median_split_correlation, rel[item.perturbation].shared_cosine, trust.get(item.perturbation).trust_status.value if item.perturbation in trust else "unknown"] for item in rows],
+            hovertemplate="%{text}<br>reliability statistic=%{x:.3g}<br>Effect=%{y:.3g}<br>cells=%{customdata[0]}<br>class=%{customdata[1]}<br>method=%{customdata[2]}<br>median split r=%{customdata[3]:.3g}<br>shared cosine=%{customdata[4]:.3g}<br>model trust=%{customdata[5]}<extra></extra>",
         )
     )
-    fig.update_layout(title="Perturbation Trust Map", xaxis_title="Response signal / control noise", yaxis_title="Response magnitude")
+    fig.update_layout(title="Perturbation Trust Map", xaxis_title="Reliability statistic (method-specific)", yaxis_title="Response magnitude")
     return fig

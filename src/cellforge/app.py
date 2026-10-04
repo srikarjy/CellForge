@@ -24,7 +24,8 @@ def render(package_path: str | Path) -> None:
     st.info(
         f"Dataset: {'REAL' if run_manifest else 'artifact'}  |  "
         f"GEARS: {'REAL' if run_manifest.get('gears_model') else 'not recorded'}  |  "
-        f"External evidence: {run_manifest.get('external_evidence_mode', 'unknown').upper()}"
+        f"External evidence: {run_manifest.get('external_evidence_mode', 'unknown').upper()}  |  "
+        f"Reliability: {run_manifest.get('reliability_method', 'legacy/unspecified')}"
     )
     pages = ["Run Overview", "Experiment", "Reliability", "Model Trust", "Candidates", "Evidence", "Contradictions", "Provenance", "Decision Package"]
     page = st.sidebar.selectbox("View", pages)

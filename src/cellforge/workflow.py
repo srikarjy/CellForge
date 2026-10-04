@@ -15,6 +15,8 @@ from cellforge.reliability import (
     PerturbationReliability,
     ReliabilityClass,
     ReliabilityConfig,
+    SplitHalfConfig,
+    classify_anndata,
     classify_table,
 )
 from cellforge.trust import ModelTrustRecord, assess_model_trust
@@ -65,12 +67,28 @@ def run_norman_decision(
     run_id: str = "norman-mvp",
     measurement_config: MeasurementConfig | None = None,
     reliability_config: ReliabilityConfig | None = None,
+    reliability_method: str = "legacy_similarity_signal_v1",
+    split_half_config: SplitHalfConfig | None = None,
     priority_config: PriorityConfig | None = None,
 ) -> NormanDecisionRun:
     """Run every MVP stage without network access or hidden mutable state."""
 
     measurement = measure_responses(adata, measurement_config)
-    reliability = classify_table(measurement, reliability_config)
+    if reliability_method == "legacy_similarity_signal_v1":
+        selected_config = reliability_config or ReliabilityConfig(method=reliability_method)
+        reliability = classify_table(measurement, selected_config)
+        reliability_config_payload = selected_config.__dict__
+    elif reliability_method == "published_split_half_spearman_brown_v1":
+        selected_config = split_half_config or SplitHalfConfig(
+            perturbation_column=measurement_config.columns.perturbation if measurement_config else "target_gene",
+            control_column=measurement_config.columns.control if measurement_config else "is_control",
+            context_column=measurement_config.context_column if measurement_config else "context",
+        )
+        reliability = classify_anndata(adata, selected_config)
+        reliability_config_payload = selected_config.__dict__
+    else:
+        raise ValueError(f"unsupported reliability method: {reliability_method}")
+    reliability_records = {record.perturbation: record for record in reliability}
     reliability_by_perturbation = {record.perturbation: record.classification for record in reliability}
     trust = assess_model_trust(advanced, control, linear, reliability_by_perturbation, training_mean=training_mean)
     trust_by_perturbation = {record.perturbation: record for record in trust}
@@ -123,6 +141,10 @@ def run_norman_decision(
                     ("cells", str(response.cells)),
                     ("control_cells", str(response.control_cells)),
                     ("effect_magnitude", f"{response.effect_magnitude:.8g}"),
+                        ("reliability_method", reliability_records[evaluation.perturbation].method),
+                        ("reliability_statistic", f"{reliability_records[evaluation.perturbation].reliability_statistic!s}"),
+                        ("median_split_correlation", f"{reliability_records[evaluation.perturbation].median_split_correlation!s}"),
+                        ("shared_cosine", f"{reliability_records[evaluation.perturbation].shared_cosine!s}"),
                     ("artifact_sha256", measurement.artifact_sha256),
                 ),
                 "model_summaries": (
@@ -145,7 +167,8 @@ def run_norman_decision(
         "model_manifests": sorted({advanced.split_sha256, control.split_sha256, linear.split_sha256}),
         "advanced_model_metadata": advanced.model_metadata,
         "evidence_payloads": sorted(record.payload_hash for record in evidence),
-        "reliability_config": reliability_config.__dict__ if reliability_config else ReliabilityConfig().__dict__,
+        "reliability_method": reliability_method,
+        "reliability_config": reliability_config_payload,
     }
     manifest_hash = hashlib.sha256(json.dumps(manifest_payload, sort_keys=True, default=str, separators=(",", ":")).encode()).hexdigest()
     package = DecisionPackage(
@@ -162,6 +185,8 @@ def run_norman_decision(
             ("advanced_model", advanced.model),
             ("split_sha256", advanced.split_sha256),
             ("advanced_model_config_sha256", str(advanced.model_metadata.get("model_config_sha256", ""))),
+            ("reliability_method", reliability_method),
+            ("reliability_config", json.dumps(reliability_config_payload, sort_keys=True, default=str)),
             ("workflow_manifest_sha256", manifest_hash),
         ),
     )

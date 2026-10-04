@@ -22,6 +22,7 @@ from cellforge.models import GEARSAdapter
 from cellforge.prioritize import CandidateEvaluation, rank_candidates
 from cellforge.trust import ModelTrustStatus
 from cellforge.reliability import ReliabilityClass
+from cellforge.reliability import SplitHalfConfig
 from cellforge.splits import SplitColumns, SplitSpec, make_split
 from cellforge.workflow import run_norman_decision
 
@@ -38,7 +39,14 @@ def main() -> int:
     parser.add_argument("--seed", type=int, default=17)
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--hidden-size", type=int, default=32)
+    parser.add_argument("--batch-size", type=int, default=64)
+    parser.add_argument("--test-batch-size", type=int, default=128)
     parser.add_argument("--fixture-evidence", type=Path)
+    parser.add_argument(
+        "--reliability-method",
+        choices=("legacy_similarity_signal_v1", "published_split_half_spearman_brown_v1"),
+        default="published_split_half_spearman_brown_v1",
+    )
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
     columns = SplitColumns(perturbation="target_gene")
@@ -59,7 +67,7 @@ def main() -> int:
 
     gears_dir = args.output / "gears"
     gears_dir.mkdir(exist_ok=True)
-    gears_config = {"device": "cuda" if torch.cuda.is_available() else "cpu", "epochs": args.epochs, "hidden_size": args.hidden_size, "batch_size": 64, "test_batch_size": 128, "go_workers": 1, "checkpoint_path": str(gears_dir / "model.pt")}
+    gears_config = {"device": "cuda" if torch.cuda.is_available() else "cpu", "epochs": args.epochs, "hidden_size": args.hidden_size, "batch_size": args.batch_size, "test_batch_size": args.test_batch_size, "go_workers": 1, "checkpoint_path": str(gears_dir / "model.pt")}
     (gears_dir / "config.json").write_text(_json(gears_config))
     gears = GEARSAdapter(data_dir=str(args.gears_data_dir), config=gears_config, seed=args.seed)
     started = time.time()
@@ -75,7 +83,23 @@ def main() -> int:
     if args.fixture_evidence:
         for record in json.loads(args.fixture_evidence.read_text()):
             evidence.append(normalize_evidence(source=record["source"], source_id=record["source_id"], target=record["target"], claim=record["claim"], evidence_type=EvidenceType(record["evidence_type"]), direction=EvidenceDirection(record["direction"]), payload=record["payload"], limitations=("fixture evidence; not a live biological retrieval",)))
-    run = run_norman_decision(adata, advanced=gears_result, control=baseline_results["control_mean"], linear=baseline_results["embedding_ridge"], training_mean=baseline_results["train_mean_shift"], evidence=tuple(evidence), run_id=args.output.name, measurement_config=MeasurementConfig(columns=columns),)
+    run = run_norman_decision(
+        adata,
+        advanced=gears_result,
+        control=baseline_results["control_mean"],
+        linear=baseline_results["embedding_ridge"],
+        training_mean=baseline_results["train_mean_shift"],
+        evidence=tuple(evidence),
+        run_id=args.output.name,
+        measurement_config=MeasurementConfig(columns=columns),
+        reliability_method=args.reliability_method,
+        split_half_config=SplitHalfConfig(
+            perturbation_column=columns.perturbation,
+            control_column=columns.control,
+            context_column="context",
+            seed=args.seed,
+        ),
+    )
     reliability_dir = args.output / "reliability"
     reliability_dir.mkdir(exist_ok=True)
     pd.DataFrame([asdict(record) for record in run.reliability]).to_parquet(reliability_dir / "reliability.parquet", index=False)
@@ -118,7 +142,7 @@ def main() -> int:
     perturbation_trust_map(run.measurement.responses, run.reliability, trust_by_name).write_html(figures_dir / "trust_map.html", include_plotlyjs="cdn")
     model_reality_check(run.model_trust).write_html(figures_dir / "model_reality_check.html", include_plotlyjs="cdn")
     model_failure_analysis(run.model_trust).write_html(figures_dir / "failure_analysis.html", include_plotlyjs="cdn")
-    run_manifest = {"run_id": args.output.name, "dataset": str(args.dataset), "output": str(args.output), "seed": args.seed, "test_perturbations": list(split.perturbations["test"]), "gears_model": gears_result.model_metadata, "baseline_means": {name: result.mean_pearson_delta for name, result in baseline_results.items()}, "gears_mean_pearson_delta": gears_result.mean_pearson_delta, "package_sha256": run.package.sha256, "external_evidence_mode": "fixture" if evidence else "none", "training_seconds_and_inference": elapsed}
+    run_manifest = {"run_id": args.output.name, "dataset": str(args.dataset), "output": str(args.output), "seed": args.seed, "test_perturbations": list(split.perturbations["test"]), "gears_model": gears_result.model_metadata, "baseline_means": {name: result.mean_pearson_delta for name, result in baseline_results.items()}, "gears_mean_pearson_delta": gears_result.mean_pearson_delta, "package_sha256": run.package.sha256, "external_evidence_mode": "fixture" if evidence else "none", "training_seconds_and_inference": elapsed, "reliability_method": args.reliability_method, "reliability_config": run.reliability[0].config if run.reliability else {}}
     (args.output / "run_manifest.json").write_text(_json(run_manifest))
     print(_json(run_manifest))
     return 0

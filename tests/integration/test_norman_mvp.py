@@ -7,6 +7,7 @@ from cellforge.evidence import EvidenceDirection, EvidenceType, normalize_eviden
 from cellforge.workflow import run_norman_decision
 from cellforge.measure import MeasurementConfig
 from cellforge.reliability import ReliabilityConfig
+from cellforge.reliability import SplitHalfConfig
 from cellforge.splits import SplitColumns
 
 
@@ -79,3 +80,26 @@ def test_norman_subset_runs_to_one_deterministic_decision_package():
     assert first.package.candidates[0].model_summaries
     assert first.package.provenance[-1][0] == "workflow_manifest_sha256"
     assert any(candidate.contradiction_ids for candidate in first.package.candidates)
+
+
+def test_norman_workflow_accepts_explicit_split_half_method_and_changes_provenance():
+    kwargs = {
+        "advanced": _evaluation("advanced", {"A": 0.9, "B": 0.6, "C": 0.2}),
+        "control": _evaluation("control", {"A": 0.1, "B": 0.1, "C": 0.1}),
+        "linear": _evaluation("linear", {"A": 0.5, "B": 0.8, "C": 0.3}),
+        "run_id": "method-switch",
+        "measurement_config": MeasurementConfig(columns=SplitColumns(perturbation="perturbation"), min_cells=1, min_controls=1),
+    }
+    legacy = run_norman_decision(_norman_subset(), **kwargs)
+    split = run_norman_decision(
+        _norman_subset(),
+        **kwargs,
+        reliability_method="published_split_half_spearman_brown_v1",
+        split_half_config=SplitHalfConfig(
+            perturbation_column="perturbation", control_column="is_control", context_column="context", min_cells=4, repeats=10, expressed_genes=4
+        ),
+    )
+    assert all(record.method == "legacy_similarity_signal_v1" for record in legacy.reliability)
+    assert all(record.method == "published_split_half_spearman_brown_v1" for record in split.reliability)
+    assert legacy.package.sha256 != split.package.sha256
+    assert legacy.package.workflow_manifest_sha256 != split.package.workflow_manifest_sha256

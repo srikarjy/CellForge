@@ -52,6 +52,28 @@ class PerturbationReliability:
     shared_response_fraction: float | None
     limitations: tuple[str, ...]
     config: dict[str, Any]
+    method: str = "legacy_similarity_signal_v1"
+    reliability_statistic: float | None = None
+    median_split_correlation: float | None = None
+    shared_cosine: float | None = None
+    shared_variance_fraction: float | None = None
+    legacy_signal: float | None = None
+    legacy_noise: float | None = None
+    legacy_snr: float | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        payload = asdict(self)
+        payload["classification"] = self.classification.value
+        return payload
+
+    @property
+    def reliability(self) -> float | None:
+        """Method-neutral alias used by split-half diagnostics."""
+        return self.reliability_statistic
+
+    @property
+    def response_magnitude(self) -> float:
+        return self.response_signal
 
 
 def _cosine(left: np.ndarray, right: np.ndarray) -> float:
@@ -102,6 +124,11 @@ def classify_reliability(
         shared_fraction,
         tuple(dict.fromkeys(limitations)),
         asdict(config),
+        method=config.method,
+        reliability_statistic=response.signal_to_noise,
+        legacy_signal=response.response_signal,
+        legacy_noise=response.noise_rms,
+        legacy_snr=response.signal_to_noise,
     )
 
 

@@ -61,6 +61,8 @@ The GEARS Norman artifact is sparse `float32` data with values approximately
 not raw UMI counts. The validation therefore does not log-normalize it again.
 The first run's ten labels were produced by the legacy heuristic and must not
 be compared directly to split-half labels as if they were the same quantity.
+The derived comparison is in
+`docs/experiments/norman-gears-first-run-reliability-reanalysis.md`.
 
 ## Differences and limitations
 
